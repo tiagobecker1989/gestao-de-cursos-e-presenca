@@ -1,0 +1,6 @@
+{
+  "name": "Gestão de Cursos e Presença",
+  "description": "Sistema completo de gestão de cursos, módulos, conteúdos, notas, chamadas de presença e relatórios em PDF e XLS",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

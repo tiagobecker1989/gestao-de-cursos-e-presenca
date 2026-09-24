@@ -1,0 +1,95 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Curso {
+  id           String      @id @default(cuid())
+  nome         String
+  descricao    String?
+  cargaHoraria Int?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  modulos      Modulo[]
+  matriculas   Matricula[]
+}
+
+model Modulo {
+  id        String     @id @default(cuid())
+  cursoId   String
+  curso     Curso      @relation(fields: [cursoId], references: [id], onDelete: Cascade)
+  nome      String
+  ordem     Int        @default(1)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  conteudos Conteudo[]
+  notas     Nota[]
+  presencas Presenca[]
+}
+
+model Conteudo {
+  id        String   @id @default(cuid())
+  moduloId  String
+  modulo    Modulo   @relation(fields: [moduloId], references: [id], onDelete: Cascade)
+  titulo    String
+  descricao String?
+  ordem     Int      @default(1)
+  createdAt DateTime @default(now())
+}
+
+model Aluno {
+  id         String      @id @default(cuid())
+  nome       String
+  email      String      @unique
+  cpf        String?     @unique
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  matriculas Matricula[]
+  notas      Nota[]
+  presencas  Presenca[]
+}
+
+model Matricula {
+  id            String   @id @default(cuid())
+  alunoId       String
+  aluno         Aluno    @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  cursoId       String
+  curso         Curso    @relation(fields: [cursoId], references: [id], onDelete: Cascade)
+  dataMatricula DateTime @default(now())
+
+  @@unique([alunoId, cursoId])
+}
+
+model Nota {
+  id            String   @id @default(cuid())
+  alunoId       String
+  aluno         Aluno    @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  moduloId      String
+  modulo        Modulo   @relation(fields: [moduloId], references: [id], onDelete: Cascade)
+  valor         Float
+  participativo Boolean  @default(false)
+  observacao    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([alunoId, moduloId])
+}
+
+model Presenca {
+  id        String   @id @default(cuid())
+  alunoId   String
+  aluno     Aluno    @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  moduloId  String
+  modulo    Modulo   @relation(fields: [moduloId], references: [id], onDelete: Cascade)
+  data      DateTime
+  presente  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([alunoId, moduloId, data])
+}
