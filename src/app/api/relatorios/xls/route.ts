@@ -135,7 +135,7 @@ export async function GET(request: Request) {
 
     const buffer = await workbook.xlsx.writeBuffer();
 
-    return new NextResponse(buffer as ArrayBuffer, {
+    return new NextResponse(new Uint8Array(buffer), {
       status: 200,
       headers: {
         "Content-Type":
