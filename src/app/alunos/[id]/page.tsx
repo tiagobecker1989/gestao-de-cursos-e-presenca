@@ -7,6 +7,7 @@ import { calcularNotaFinalModulo, calcularSituacaoCurso } from "@/lib/calculos";
 import { formatarCPF, formatarNota } from "@/lib/utils";
 import { ArrowLeft, User, Mail, CreditCard, BookOpen, Check, X } from "lucide-react";
 import Link from "next/link";
+import { AlunoFichaClient } from "./AlunoFichaClient";
 
 export const revalidate = 0;
 
@@ -46,6 +47,26 @@ export default async function AlunoFichaPage({
     notFound();
   }
 
+  let todosModulosAprovados = true;
+  aluno.matriculas.forEach((m) => {
+    m.curso.modulos.forEach((modulo) => {
+      const notaObj = aluno.notas.find((n) => n.moduloId === modulo.id);
+      const presencasObj = aluno.presencas
+        .filter((p) => p.moduloId === modulo.id)
+        .map((p) => p.presente);
+
+      const res = calcularNotaFinalModulo(
+        notaObj ? [notaObj.valor] : [],
+        presencasObj,
+        notaObj ? notaObj.participativo : false
+      );
+
+      if (!res.aprovado) {
+        todosModulosAprovados = false;
+      }
+    });
+  });
+
   return (
     <div className="space-y-8">
       <Header
@@ -59,6 +80,8 @@ export default async function AlunoFichaPage({
           </Link>
         }
       />
+
+      <AlunoFichaClient aluno={aluno} podeEmitirCertificado={todosModulosAprovados} />
 
       {/* Card Dados Pessoais */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-6">

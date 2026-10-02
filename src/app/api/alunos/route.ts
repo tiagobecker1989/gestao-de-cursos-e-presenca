@@ -8,11 +8,17 @@ const alunoSchema = z.object({
   nome: z.string().min(2, "O nome deve ter pelo menos 2 caracteres"),
   email: z.string().email("E-mail inválido"),
   cpf: z.string().optional().nullable(),
+  ativo: z.boolean().default(true),
+  observacaoProfessor: z.string().optional().nullable(),
 });
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const incluirInativos = searchParams.get("incluirInativos") === "true";
+
     const alunos = await prisma.aluno.findMany({
+      where: incluirInativos ? undefined : { ativo: true },
       include: {
         _count: {
           select: {
@@ -46,7 +52,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { email, cpf } = validation.data;
+    const { email, cpf, nome, ativo, observacaoProfessor } = validation.data;
 
     const emailExistente = await prisma.aluno.findUnique({
       where: { email },
@@ -71,8 +77,17 @@ export async function POST(request: Request) {
       }
     }
 
+    const tokenAcesso = Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+
     const aluno = await prisma.aluno.create({
-      data: validation.data,
+      data: {
+        nome,
+        email,
+        cpf,
+        ativo,
+        observacaoProfessor,
+        tokenAcesso,
+      },
     });
 
     return NextResponse.json(aluno, { status: 201 });

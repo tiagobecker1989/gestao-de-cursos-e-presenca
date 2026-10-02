@@ -8,12 +8,22 @@ const cursoSchema = z.object({
   nome: z.string().min(2, "O nome deve ter pelo menos 2 caracteres"),
   descricao: z.string().optional(),
   cargaHoraria: z.number().int().positive().optional(),
+  turma: z.string().optional(),
+  ativo: z.boolean().default(true),
+  professorId: z.string().optional().nullable(),
 });
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const incluirInativos = searchParams.get("incluirInativos") === "true";
+
     const cursos = await prisma.curso.findMany({
+      where: incluirInativos ? undefined : { ativo: true },
       include: {
+        professor: {
+          select: { id: true, nome: true, email: true },
+        },
         _count: {
           select: {
             modulos: true,

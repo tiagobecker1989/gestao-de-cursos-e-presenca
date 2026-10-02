@@ -8,6 +8,9 @@ const cursoUpdateSchema = z.object({
   nome: z.string().min(2, "O nome deve ter pelo menos 2 caracteres").optional(),
   descricao: z.string().optional(),
   cargaHoraria: z.number().int().positive().optional(),
+  turma: z.string().optional(),
+  ativo: z.boolean().optional(),
+  professorId: z.string().optional().nullable(),
 });
 
 export async function GET(
@@ -18,6 +21,9 @@ export async function GET(
     const curso = await prisma.curso.findUnique({
       where: { id: params.id },
       include: {
+        professor: {
+          select: { id: true, nome: true, email: true },
+        },
         modulos: {
           orderBy: { ordem: "asc" },
           include: {
@@ -71,6 +77,9 @@ export async function PUT(
     const curso = await prisma.curso.update({
       where: { id: params.id },
       data: validation.data,
+      include: {
+        professor: true,
+      },
     });
 
     return NextResponse.json(curso);

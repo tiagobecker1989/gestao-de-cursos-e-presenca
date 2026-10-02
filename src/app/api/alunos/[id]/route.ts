@@ -8,6 +8,8 @@ const alunoUpdateSchema = z.object({
   nome: z.string().min(2, "O nome deve ter pelo menos 2 caracteres").optional(),
   email: z.string().email("E-mail inválido").optional(),
   cpf: z.string().optional().nullable(),
+  ativo: z.boolean().optional(),
+  observacaoProfessor: z.string().optional().nullable(),
 });
 
 export async function GET(
@@ -15,15 +17,26 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const aluno = await prisma.aluno.findUnique({
+    let aluno = await prisma.aluno.findUnique({
       where: { id: params.id },
       include: {
+        atividades: {
+          orderBy: { data: "desc" },
+        },
         matriculas: {
           include: {
             curso: {
               include: {
+                professor: {
+                  select: { id: true, nome: true, email: true },
+                },
                 modulos: {
                   orderBy: { ordem: "asc" },
+                  include: {
+                    conteudos: {
+                      orderBy: { ordem: "asc" },
+                    },
+                  },
                 },
               },
             },
@@ -50,6 +63,32 @@ export async function GET(
         { error: "Aluno não encontrado" },
         { status: 404 }
       );
+    }
+
+    if (!aluno.tokenAcesso) {
+      const tokenAcesso = Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+      aluno = await prisma.aluno.update({
+        where: { id: params.id },
+        data: { tokenAcesso },
+        include: {
+          atividades: { orderBy: { data: "desc" } },
+          matriculas: {
+            include: {
+              curso: {
+                include: {
+                  professor: { select: { id: true, nome: true, email: true } },
+                  modulos: {
+                    orderBy: { ordem: "asc" },
+                    include: { conteudos: { orderBy: { ordem: "asc" } } },
+                  },
+                },
+              },
+            },
+          },
+          notas: { include: { modulo: true } },
+          presencas: { include: { modulo: true }, orderBy: { data: "desc" } },
+        },
+      });
     }
 
     return NextResponse.json(aluno);

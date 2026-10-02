@@ -8,11 +8,35 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum Role {
+  GESTOR
+  SECRETARIA
+  PROFESSOR
+  ALUNO
+}
+
+model Usuario {
+  id                String   @id @default(cuid())
+  nome              String
+  email             String   @unique
+  senha             String
+  role              Role     @default(PROFESSOR)
+  alunoId           String?  @unique
+  aluno             Aluno?   @relation(fields: [alunoId], references: [id], onDelete: SetNull)
+  cursosMinistrados Curso[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
 model Curso {
   id           String      @id @default(cuid())
   nome         String
   descricao    String?
   cargaHoraria Int?
+  turma        String?     @default("TURMA-01")
+  ativo        Boolean     @default(true)
+  professorId  String?
+  professor    Usuario?    @relation(fields: [professorId], references: [id], onDelete: SetNull)
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
   modulos      Modulo[]
@@ -20,16 +44,17 @@ model Curso {
 }
 
 model Modulo {
-  id        String     @id @default(cuid())
-  cursoId   String
-  curso     Curso      @relation(fields: [cursoId], references: [id], onDelete: Cascade)
-  nome      String
-  ordem     Int        @default(1)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  conteudos Conteudo[]
-  notas     Nota[]
-  presencas Presenca[]
+  id              String           @id @default(cuid())
+  cursoId         String
+  curso           Curso            @relation(fields: [cursoId], references: [id], onDelete: Cascade)
+  nome            String
+  ordem           Int              @default(1)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  conteudos       Conteudo[]
+  notas           Nota[]
+  presencas       Presenca[]
+  atividadesAluno AtividadeAluno[]
 }
 
 model Conteudo {
@@ -43,15 +68,32 @@ model Conteudo {
 }
 
 model Aluno {
-  id         String      @id @default(cuid())
-  nome       String
-  email      String      @unique
-  cpf        String?     @unique
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  matriculas Matricula[]
-  notas      Nota[]
-  presencas  Presenca[]
+  id                  String           @id @default(cuid())
+  nome                String
+  email               String           @unique
+  cpf                 String?          @unique
+  ativo               Boolean          @default(true)
+  tokenAcesso         String?          @unique
+  observacaoProfessor String?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  usuario             Usuario?
+  matriculas          Matricula[]
+  notas               Nota[]
+  presencas           Presenca[]
+  atividades          AtividadeAluno[]
+}
+
+model AtividadeAluno {
+  id        String   @id @default(cuid())
+  alunoId   String
+  aluno     Aluno    @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  moduloId  String
+  modulo    Modulo   @relation(fields: [moduloId], references: [id], onDelete: Cascade)
+  data      DateTime @default(now())
+  atividade String
+  resultado String   @default("Concluído")
+  createdAt DateTime @default(now())
 }
 
 model Matricula {
